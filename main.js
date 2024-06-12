@@ -19,13 +19,13 @@ function GenerarCompra ()
     do {
         pedirProducto();
         if (producto===null) {
-            alert("Usted canceló la operación. Gracias por visitarnos.");
+            alert("Cancelaste la operación. Gracias por visitarnos.");
             return;
         }
 
         pedirCantidad();
         if (Number.isNaN(cantidad)) {
-            alert("Usted canceló la operación. Gracias por visitarnos.");
+            alert("Cancelaste la operación. Gracias por visitarnos.");
             return;
         }
 
