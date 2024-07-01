@@ -3,12 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geen Point</title>
 </head>
 <body>
-    <h1>GREEN POINT</h1>
-    <H2>¡Encontrá tu punto de recolección más cercano!</H2>
-    <p>Registrate como Green User, llevá tus residuos reciclables al centro de acopio más cercano a tu ubicación, sumá puntos y obtené increíbles beneficios en la compra de nuestros productos ecofriendly.</p>
-    <script src="main.js"></script>
+    <main>
+        <label id="ultima"></label>
+        <h1>Listado de Productos</h1>
+        <ul id="listado">
+        </ul>
+        <br>
+        <label>Ingrese Cantidad</label>
+        <input id="cantidad">
+        <br>
+        <label>Ingrese Producto</label>
+        <input id="producto">
+        <br>
+        <button id="agregarProducto">Agregar</button>
+        <br>
+        <h1>Productos en el Carrito</h1>
+        <ul id="produtosCarrito">
+        </ul>
+        <label>Ingrese Puntos acumulados</label>
+        <input id="puntos">
+        <br>
+        <button id="comprarProductos">Comprar</button>
+        <br>
+        <label>Descuento</label>
+        <input id="descuento" disabled="true">
+        <br>
+        <label>Valor a pagar</label>
+        <input id="valor" disabled="true">
+    </main>
+    
 </body>
-</html>
+<script src="main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</html>const productos = [
+{ id: 1, nombre: "Huerta", precio: 10000},
+{ id: 2, nombre: "Compostera", precio: 20000},
+{ id: 3, nombre: "Maceta", precio: 5000}
+];
+
+let producto = "";
+let precio = 0;
+let cantidad = 0;
+let cantidadTotal = 0;
+let precioTotal = 0; 
+let seguirComprando = false;
+let descuento = 0;
+
+function GenerarCompra ()
+{
+alert(productos.map(p => p.nombre + " $" + p.precio).join("\n"));
+
+do {
+    pedirProducto();
+    if (producto===null) {
+        alert("Cancelaste la operación. Gracias por visitarnos.");
+        return;
+    }
+
+    pedirCantidad();
+    if (Number.isNaN(cantidad)) {
+        alert("Cancelaste la operación. Gracias por visitarnos.");
+        return;
+    }
+
+    calcularTotales();
+    seguirComprando = confirm("¿Querés seguir comprando?");
+} while (seguirComprando);
+
+alert("Compraste " + cantidadTotal + " productos. El monto total de tu compra es $" + precioTotal);
+
+calcularDescuentoPorPuntosAcumulados();
+
+calcularPrecioFinal();
+}
+
+const pedirProducto = () => {
+let productoValido = false;
+producto = prompt("¿Qué producto querés comprar?");
+
+while(productoValido === false && producto != null) {
+    switch (producto.toLowerCase()) {
+        case productos[0].nombre.toLowerCase():
+            precio = productos[0].precio;
+            productoValido = true;
+            break;
+        case productos[1].nombre.toLowerCase():
+            precio = productos[1].precio;
+            productoValido = true;
+            break;
+        case productos[2].nombre.toLowerCase():
+            precio = productos[2].precio;
+            productoValido = true;
+            break;
+        default:
+            alert("El producto ingresado no es válido.");
+            producto = prompt("¿Qué producto querés comprar?");
+            break;
+    }
+}
+}
+
+const pedirCantidad = () => {
+cantidad = prompt("¿Qué cantidad querés comprar? Ingresá un número.");
+
+while (cantidad != null && (Number.isNaN(parseInt(cantidad)) || parseInt(cantidad) <= 0)) {
+    alert("Debés ingresar una cantidad válida.");
+    cantidad = prompt("¿Qué cantidad querés comprar? Ingresá un número.");
+}
+cantidad = parseInt(cantidad);
+}
+
+function calcularTotales(){
+precioTotal = precioTotal + calculadora(precio, cantidad, "*");
+cantidadTotal = calculadora(cantidadTotal, cantidad, "+");
+}
+
+function calcularDescuentoPorPuntosAcumulados() 
+{
+let puntosAcumulados = parseInt(prompt("Ingresá tus puntos acumulados"));
+while (Number.isNaN(puntosAcumulados) || puntosAcumulados <= 0) {
+    alert("Debés ingresar una cantidad de puntos válida.");
+    puntosAcumulados = parseInt(prompt("Ingresá tus puntos acumulados."));
+}
+
+if ((puntosAcumulados >=100) && (puntosAcumulados <500)) {
+    descuento = calculadora(precioTotal, 0.10, "*");
+} else if ((puntosAcumulados >=500) && (puntosAcumulados <1000)) {
+    descuento = calculadora(precioTotal, 0.20, "*");
+} else if (puntosAcumulados >=1000) {
+    descuento = calculadora(precioTotal, 0.40, "*");
+} else {
+    descuento = calculadora(precioTotal, 0, "*");
+}
+
+alert("Tu descuento es $" + descuento);
+}
+
+function calcularPrecioFinal()  { 
+let precioFinal = calculadora(precioTotal, descuento, "-");
+alert("Tu precio final es $" + precioFinal);
+}
+
+function calculadora (numero1, numero2, operacion) {
+switch (operacion) {
+    case "+":
+        return numero1 + numero2;
+    case "-":
+        return numero1 - numero2;
+    case "*":
+        return numero1 * numero2;
+    case "/":       
+        return numero1 / numero2;
+    default:
+        return 0; 
+}
+}
+
+if (confirm("¿Te gustaría conocer nuestros productos?")) {
+GenerarCompra()
+} else {
+alert("Gracias por visitarnos.");
+}

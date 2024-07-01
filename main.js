@@ -4,7 +4,7 @@ const productos = [
     { id: 3, nombre: "Maceta", precio: 5000}
 ];
 
-let producto = "";
+let productoAgregado = "";
 let precio = 0;
 let cantidad = 0;
 let cantidadTotal = 0;
@@ -12,83 +12,85 @@ let precioTotal = 0;
 let seguirComprando = false;
 let descuento = 0;
 
-function GenerarCompra ()
-{
-    alert(productos.map(p => p.nombre + " $" + p.precio).join("\n"));
+let botonAgregar = document.getElementById("agregarProducto");
 
-    do {
-        pedirProducto();
-        if (producto===null) {
-            alert("Cancelaste la operación. Gracias por visitarnos.");
-            return;
-        }
+botonAgregar.addEventListener("click", agregarProducto);
 
-        pedirCantidad();
-        if (Number.isNaN(cantidad)) {
-            alert("Cancelaste la operación. Gracias por visitarnos.");
-            return;
-        }
+let botonComprar = document.getElementById("comprarProductos");
 
-        calcularTotales();
-        seguirComprando = confirm("¿Querés seguir comprando?");
-    } while (seguirComprando);
+botonComprar.addEventListener("click", comprarProductos);
 
-    alert("Compraste " + cantidadTotal + " productos. El monto total de tu compra es $" + precioTotal);
+function agregarProducto() {
+    let producto = document.getElementById("producto").value;
+    pedirProducto(producto);
+    let cantidadIngresada = document.getElementById("cantidad").value;
+    pedirCantidad(cantidadIngresada);
+    if(precio==0 || cantidad==0){
+        return;
+    }
+    mostrarProductosComprados();
+    calcularTotales();
+}
 
+function comprarProductos () {
     calcularDescuentoPorPuntosAcumulados();
-    
+    if(puntos==0){
+        return;
+    }
     calcularPrecioFinal();
 }
 
-const pedirProducto = () => {
-    let productoValido = false;
-    producto = prompt("¿Qué producto querés comprar?");
-
-    while(productoValido === false && producto != null) {
+const pedirProducto = (producto) => {
         switch (producto.toLowerCase()) {
             case productos[0].nombre.toLowerCase():
                 precio = productos[0].precio;
-                productoValido = true;
+                productoAgregado = productos[0].nombre;
                 break;
             case productos[1].nombre.toLowerCase():
                 precio = productos[1].precio;
-                productoValido = true;
+                productoAgregado = productos[1].nombre;
                 break;
             case productos[2].nombre.toLowerCase():
                 precio = productos[2].precio;
-                productoValido = true;
+                productoAgregado = productos[2].nombre;
                 break;
             default:
-                alert("El producto ingresado no es válido.");
-                producto = prompt("¿Qué producto querés comprar?");
+                precio = 0;
+                mostrarError("El producto ingresado no es válido, intente nuevamente.");
                 break;
         }
-    }
 }
 
-const pedirCantidad = () => {
-    cantidad = prompt("¿Qué cantidad querés comprar? Ingresá un número.");
-
-    while (cantidad != null && (Number.isNaN(parseInt(cantidad)) || parseInt(cantidad) <= 0)) {
-        alert("Debés ingresar una cantidad válida.");
-        cantidad = prompt("¿Qué cantidad querés comprar? Ingresá un número.");
+const pedirCantidad = (cantidadIngresada) => {
+    if (cantidadIngresada != null && (Number.isNaN(parseInt(cantidadIngresada)) || parseInt(cantidadIngresada) <= 0)) {
+        mostrarError("Debés ingresar una cantidad válidan intente nuevamente.");
+        cantidad = 0;
+        return;
     }
-    cantidad = parseInt(cantidad);
+    cantidad = parseInt(cantidadIngresada);
 }
 
 function calcularTotales(){
     precioTotal = precioTotal + calculadora(precio, cantidad, "*");
     cantidadTotal = calculadora(cantidadTotal, cantidad, "+");
+    document.getElementById("producto").value="";
+    document.getElementById("cantidad").value="";
 }
 
 function calcularDescuentoPorPuntosAcumulados() 
 {
-    let puntosAcumulados = parseInt(prompt("Ingresá tus puntos acumulados"));
-    while (Number.isNaN(puntosAcumulados) || puntosAcumulados <= 0) {
-        alert("Debés ingresar una cantidad de puntos válida.");
-        puntosAcumulados = parseInt(prompt("Ingresá tus puntos acumulados."));
+    if(precioTotal<=0) {
+        mostrarError("Debés agregar al menos un producto al carrito.");
+        puntos=0;
+        return;
     }
-
+    let puntos = document.getElementById("puntos").value;
+    let puntosAcumulados = parseInt(puntos);
+    if (Number.isNaN(puntosAcumulados) || puntosAcumulados <= 0) {
+        mostrarError("Debés ingresar una cantidad de puntos válida de puntos acumulados, intente nuevamente.");
+        puntos=0;
+        return;
+    }
     if ((puntosAcumulados >=100) && (puntosAcumulados <500)) {
         descuento = calculadora(precioTotal, 0.10, "*");
     } else if ((puntosAcumulados >=500) && (puntosAcumulados <1000)) {
@@ -98,13 +100,20 @@ function calcularDescuentoPorPuntosAcumulados()
     } else {
         descuento = calculadora(precioTotal, 0, "*");
     }
-
-    alert("Tu descuento es $" + descuento);
+    document.getElementById("descuento").value = "$" + descuento;
 }
 
 function calcularPrecioFinal()  { 
+    if(descuento==0){
+        return;
+    }
     let precioFinal = calculadora(precioTotal, descuento, "-");
-    alert("Tu precio final es $" + precioFinal);
+    let fechaActual= obtenerFechaFormateada(new Date())
+    let ultimaCompra = {precio : precioFinal, fecha : fechaActual };
+    let ultimaCompraJson = JSON.stringify(ultimaCompra);
+    localStorage.setItem('ultimaCompra',ultimaCompraJson);
+    document.getElementById("valor").value = "$" + precioFinal;
+    document.getElementById('ultima').innerHTML = "Su ultima compra fue de $"+ precioFinal + " el dia "+ fechaActual;
 }
 
 function calculadora (numero1, numero2, operacion) {
@@ -122,8 +131,58 @@ function calculadora (numero1, numero2, operacion) {
     }
 }
 
-if (confirm("¿Te gustaría conocer nuestros productos?")) {
-    GenerarCompra()
-} else {
-    alert("Gracias por visitarnos.");
+function mostrarProductosComprados(){
+    const ul = document.getElementById('produtosCarrito');
+
+    let li = document.createElement('li');
+    li.textContent = productoAgregado + " - " + cantidad;
+    ul.appendChild(li);
 }
+
+function obtenerFechaFormateada(fechaActual) {
+    let dia = fechaActual.getDate().toString().padStart(2, '0');
+    let mes = (fechaActual.getMonth() + 1).toString().padStart(2, '0'); // Los meses comienzan desde 0
+    let año = fechaActual.getFullYear();
+
+    let horas = fechaActual.getHours().toString().padStart(2, '0');
+    let minutos = fechaActual.getMinutes().toString().padStart(2, '0');
+
+    let fechaFormateada = `${dia}/${mes}/${año} ${horas}:${minutos}`;
+
+    return fechaFormateada;
+}
+
+function mostrarError(mensaje){
+    Swal.fire({
+        title: 'Error',
+        text: mensaje,
+        icon: 'error',
+        confirmButtonText: 'OK'
+    });
+}
+
+
+function cargarDatosPrevios() {
+    var ultimaCompraGetJson= localStorage.getItem('ultimaCompra');
+    var ultimaCompra= JSON.parse(ultimaCompraGetJson)
+    console.log(ultimaCompra)
+    console.log(ultimaCompra.precio)
+    if (ultimaCompra.precio == null || (Number.isNaN(parseInt(ultimaCompra.precio)) || parseInt(ultimaCompra.precio) <= 0)) {
+        document.getElementById('ultima').innerHTML = "No se registra compra anterior";
+    }
+    else{
+        document.getElementById('ultima').innerHTML =  "Su ultima compra fue de $"+ ultimaCompra.precio + " el dia "+ ultimaCompra.fecha;
+    }
+}
+
+productos.map(p => p.nombre + " $" + p.precio).join("\n")
+
+const ul = document.getElementById('listado');
+
+productos.map(producto => {
+    let li = document.createElement('li');
+    li.textContent = producto.nombre + " $" + producto.precio;
+    ul.appendChild(li);
+});
+
+cargarDatosPrevios();
